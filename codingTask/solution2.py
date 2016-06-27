@@ -115,3 +115,10 @@ def fileNaming(plantName, multi, lat, lng, image_format):
         return name + "_multipleCT_" + lat + "," + lng + "." + image_format
     elif multi == 0:
         return name + "_" + lat + "," + lng + "." + image_format
+
+# Return file destination(s)
+def fileDestination(fileName, coolingType):
+    destination = []
+    for i in coolingType:
+        destination.append(os.path.join("images", i, fileName))
+    return destination
