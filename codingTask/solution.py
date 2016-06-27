@@ -100,7 +100,7 @@ image_format = "png"
 key = "AIzaSyBNN6-EvyqIrh0O4A2c5GjbgoNR7zFeAdI"  # This is rate limited to 2500 free queries per day
 
 # Retrieve image from Google Maps API and save to local directories
-countLimit = 100  # Limit each run
+countLimit = 10  # Limit each run
 count = 0
 row = 0
 while count < countLimit:
@@ -140,16 +140,23 @@ while count < countLimit:
     if row > 0 and plantCode == res[row-1][0]:
         srcfile = os.path.join("images", str(res[row-1][2]), fileName)
         dstfile = os.path.join("images", folder, fileName)
-        shutil.copy(srcfile, dstfile)
-        print "Copied ", fileName, " to ", folder
+        if not os.path.exists(dstfile):
+            shutil.copy(srcfile, dstfile)
+            print "Copied ", fileName, " to ", folder
+        else:
+            print "File already exists in " + folder + ". Skipped."
     # 3.2. Retrieve image if it has not been downloaded
     else:
-        url =  serviceurl + urllib.urlencode({
-            "maptype": maptype, "center": center, "zoom": zoom, "size": size, "format": image_format, "key": key
-            })
-        urllib.urlretrieve(url, os.path.join("images", folder, fileName))
-        print "Saved ", fileName, " to ", folder
-        count += 1
+        dst = os.path.join("images", folder, fileName)
+        if not os.path.exists(dst):
+            url =  serviceurl + urllib.urlencode({
+                "maptype": maptype, "center": center, "zoom": zoom, "size": size, "format": image_format, "key": key
+                })
+            urllib.urlretrieve(url, dst)
+            print "Saved " + fileName + " to " + folder
+            count += 1
+        else:
+            print "File already exsits in " + folder + ". Skipped."
 
     row += 1
 
