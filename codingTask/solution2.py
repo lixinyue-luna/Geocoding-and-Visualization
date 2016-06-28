@@ -123,7 +123,7 @@ def newFolder(coolingTypes):
             cooling = "NA"
         else:
             cooling = i
-        path = os.path.join("images", cooling)
+        path = os.path.join("images2", cooling)
         if os.path.exists(path) is False:
             os.makedirs(path)
 
@@ -139,11 +139,12 @@ def fileDestination(fileName, coolingType):
     destination = []
     for i in coolingType:
         if len(i) < 1:
-            destination.append(os.path.join("images", "NA", fileName))
+            destination.append(os.path.join("images2", "NA", fileName))
         else:
-            destination.append(os.path.join("images", i, fileName))
+            destination.append(os.path.join("images2", i, fileName))
     return destination
 
+############################################################
 ############################################################
 ### Main
 ## Creat a database of power plant with cooling and locations information
@@ -229,7 +230,6 @@ data = cur.execute('''
     ORDER BY coolingInfo.plantID
     ''')
 res = data.fetchall()
-
 # Create a dictionary {(plantName, lat, lng): [list of coolingType]}
 dictPlant = {}
 for row in range(len(res)):
