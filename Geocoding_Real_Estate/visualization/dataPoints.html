@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="initial-scale=1.0" />
+    <title>Map</title>
+    <link href="mystyle.css" rel="stylesheet">
+    <script src="dataPoints.js"></script>
+  </head>
+  <body id="map-container">
+    <div id="floating-panel">
+      <input onclick="setHeatmap();" type=button value="Show Heatmap" class="myButton">
+      <input onclick="setMarkers();" type=button value="Show Markers" class="myButton">
+    </div>
+    <div id="map"></div>
+    <div id="legend"><h3>Sale Price</h3></div>
+    <script>
+      var map, heatmap, markersOverlay;
+
+      function initMap() {
+        // Initialize map
+        var defaultLatLng = new google.maps.LatLng(36.9915489, -118.9655794);
+        var mapOptions = {
+          center: defaultLatLng,
+          zoom: 6
+        };
+        map = new google.maps.Map(document.getElementById('map'), mapOptions);
+        markersOverlay = new google.maps.Data();
+        setHeatmap();  // Default showing heatmap
+      };
+
+      function setHeatmap(){
+        try {
+          for (var i = 0; i < markersOverlay.length; i++){map.data.remove(markersOverlay[i]);}
+        } catch(err) {};
+        heatmap = new google.maps.visualization.HeatmapLayer({
+          data: getWeightedPoints("SalePrice"),
+          radius: 10,
+          opacity: 0.85
+        });
+        map.setOptions({styles: [{featureType: "all",stylers: [{saturation: -100}]}]});
+        map.setMapTypeId('roadmap');
+        heatmap.setMap(map);
+      };
+
+      function setMarkers(){
+          heatmap.setMap(null);
+          map.setOptions({styles: [{featureType: "all",stylers: [{saturation: 0}]}]});
+          map.setMapTypeId('hybrid');
+          markersOverlay.addGeoJson(dataset);
+          markersOverlay.setStyle(function(feature){
+            console.log();
+            return {
+              icon: getIcon(feature.getProperty('SalePrice')),
+              fillOpacity: 0.8,
+              strokeColor: '#b3b3b3',
+              strokeWeight: 1,
+              zIndex: 1
+            };
+          });
+
+          // Draw legend
+          var legend = document.getElementById('legend');
+          var icons = getIconList();
+          for (var key in icons) {
+            var type = key;
+            var range = icons[key][0];
+            var icon = icons[key][1];
+            var div = document.createElement('div');
+            div.style['margin'] = '1px';
+            div.innerHTML = '<img src="' + icon + '" style="width:auto;height:25px;vertical-align:middle;">' +
+                            '<span>&nbsp;&nbsp;' + range + '</span>';
+            legend.appendChild(div);
+          };
+          map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(legend);
+
+          // InfoWindow
+          var infoWindow = new google.maps.InfoWindow({content: ""});
+          markersOverlay.addListener('click', function(e) {
+            infoWindow.setContent('<div style="line-height:1.00;overflow:hidden;white-space:nowrap;">' +
+              '<b><p>Data ID: </b>' + e.feature.getProperty('DataId') + '<br>' +
+              '<b><p>Sale Price: </b>$' + e.feature.getProperty('SalePrice') + '<br>' +
+              '<b><p>List Price: </b>$' + e.feature.getProperty('ListPrice') + '<br>' +
+              '<b><p>Address: </b><br>' +
+              '<p>' + e.feature.getProperty('Address') + '<br>' +
+              '<p>' + e.feature.getProperty('City') + ', ' +
+              e.feature.getProperty('State') + '&nbsp;' +
+              e.feature.getProperty('PostalCode') + '</div>'
+            );
+              var anchor = new google.maps.MVCObject();
+              anchor.set("position", e.latLng);
+              infoWindow.open(map, anchor);
+          });
+
+          markersOverlay.setMap(map);
+      };
+
+      function getWeightedPoints(price) { // Price is SalePrice or ListPrice
+        var weightedPoints = [];
+        for (var i = 0; i < dataset.features.length; i++) {
+          var coords = dataset.features[i].geometry.coordinates;
+          try {
+            var latLng = new google.maps.LatLng(coords[1], coords[0]);
+            var thisPrice = dataset.features[i].properties[price];
+            if (thisPrice <= 0) {} else {
+              var weight = thisPrice;
+              weightedPoints.push({location: latLng, weight: weight});
+          }} catch(err) {
+            console.log("Error: " + err + ".");
+          };
+        }
+        return weightedPoints;
+      };
+
+      function getIcon(price) {
+        var icon_list = getIconList();
+        if (isNaN(price) || price <= 0) {return icon_list['na'][1]}
+        else if (price <= 240000) {return icon_list['lowest'][1]}
+        else if (price <= 365000) {return icon_list['low'][1]}
+        else if (price <= 550500) {return icon_list['high'][1]}
+        else {return icon_list['highest'][1]};
+      };
+
+      function getIconList() {
+        return {
+          na: ["Price Unknown", "icons/apartment-mid.png"],
+          lowest: ["$100 ~ $240,000", "icons/apartment-lowest.png"],
+          low: ["$240,001 ~ $365,000", "icons/apartment-low.png"],
+          high: ["$365,001 ~ $550,500","icons/apartment-high.png"],
+          highest: ["$550,501 ~ $28,800,000", "icons/apartment-highest.png"]
+        }
+      };
+
+    </script>
+
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCyji1a4snTdXPg4yF-fxw8G79gUfHKO6E&v=3&libraries=visualization&callback=initMap">
+    </script>
+  </body>
+</html>
